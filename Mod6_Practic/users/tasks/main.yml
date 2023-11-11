@@ -1,0 +1,27 @@
+---
+    - name: Add a group  developer
+      group:
+        name: developer
+        state: present
+
+    - name: Create User
+      user:
+        name: user1
+        shell: /bin/bash
+        groups: developer
+        append: yes
+
+    - name: SSH public key to the remote server
+      copy:
+        src: /root/.ssh/id_rsa.pub
+        dest: /home/user1/.ssh/id_rsa.pub
+        owner: user1
+        mode: 0600
+      delegate_to: localhost
+      run_once: true
+
+    - name: Set authorized keys
+      authorized_key:
+        user: user1
+        key: "{{ lookup('file', '/home/user1/.ssh/id_rsa.pub') }}"
+      become_user: user1
