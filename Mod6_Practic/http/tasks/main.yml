@@ -1,0 +1,21 @@
+---
+  - name: Install Nginx
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - nginx
+
+
+  - name: Check Nginx service enabled and started
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+  - name: Config for NGINX
+    template:
+      src: files/default
+      dest: /etc/nginx/sites-enabled/default
+    notify:
+    - nginx reload
