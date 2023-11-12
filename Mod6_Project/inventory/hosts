@@ -1,0 +1,21 @@
+all:
+  hosts:
+  children:
+    app:
+      hosts:
+        vm2:
+          ansible_host: 158.160.83.245
+        vm3:
+          ansible_host: 51.250.47.45
+    web:
+      hosts:
+        vm1:
+          ansible_host: 10.16.10.18
+    database:
+      vars:
+        pg_ver: 12
+        pg_data: /home/ubuntu/pgsql
+      hosts:
+        vm1:
+          ansible_host: 10.16.10.18
+

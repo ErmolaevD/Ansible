@@ -1,0 +1,121 @@
+---
+- hosts: app
+  become: true
+  become_method: sudo
+  become_user: root
+  
+  tasks:
+  - name: Install, configure, and start Docker Ubuntu
+    block:
+      - name: Update apt packages
+        apt:
+          update_cache: yes
+          
+
+      - name: Additional packages for Docker
+        apt: "{{ item }}"
+        loop: 
+          - ca-certificates
+          - curl
+          - gnupg
+
+      - name: Add Docker's official GPG key
+        apt_key:
+          url: https://download.docker.com/linux/ubuntu/gpg
+          state: present
+
+      - name: Add the repository to Apt sources
+        apt_repository:
+          repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+          update_cache: yes
+          state: present
+
+      - name: Install Docker
+        apt: "{{ item }}"
+        loop: 
+          - docker-ce 
+          - docker-ce-cli
+          - containerd.io 
+          - docker-buildx-plugin 
+          - docker-compose-plugin
+
+    when: ansible_facts['distribution'] == 'Ubuntu'
+
+  - name: Install, configure, and start Docker CentOS
+    block:
+      - name: Update apt packages
+        yum:
+          update_cache: yes
+
+      - name: Install httpd and memcached
+        yum:
+          name:  yum-utils
+          state: present
+
+      - name: Add repository
+        yum_repository:
+          name: docker
+          description: DOCKER YUM repo
+          baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+       
+      - name: Install Docker
+        yum:
+          name: "{{ item }}"
+          state: present
+        loop:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+
+    when: ansible_facts['distribution'] == 'CentOS'
+
+  - name: Docker systemd
+    systemd:
+      name: docker
+      enabled: yes
+      state: started
+
+
+- hosts: database
+  become: true
+  become_method: sudo
+  become_user: root
+  
+  tasks:
+  - name: "Install PostgreSQL version {{ pg_ver }}"
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - "postgresql-{{ pg_ver }}"
+      - postgresql-contrib
+      - "postgresql-client-{{ pg_ver }}"
+
+  - name: Creating a directory for a data directory
+    file:
+      path: "{{ pg_data }}"  
+      state: directory
+      mode: '0700'  
+
+  - name: Configuring access rights to the data directory
+    file:
+      path: "{{ pg_data }}"
+      owner: postgres  
+      group: postgres  
+      mode: '0700'
+
+  - name: Initialize PostgreSQL
+    shell: "/usr/lib/postgresql/{{ pg_ver }}/bin/initdb"
+    environment:
+      PGDATA: "{{ pg_data }}"
+    become: yes
+    become_user: postgres
+ 
+
+  - name: Starting the PostgreSQL server
+    systemd:
+      name: postgresql
+      state: started  
+      enabled: yes
