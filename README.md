@@ -10,7 +10,6 @@ skillfactory_learn
 
 
 Задание 6
-
 Поднимите nginx и php-fpm на разных серверах:
 Для nginx сервера используйте роль «users» «http».
 Для php-fpm сервера используйте роль «users» «php».
